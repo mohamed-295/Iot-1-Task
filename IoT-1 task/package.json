@@ -1,0 +1,16 @@
+{
+  "name": "iot-1",
+  "version": "1.0.0",
+  "description": "this is for IoT task-1 using websocket",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Mahmoud Khaled",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^5.1.0",
+    "nodemon": "^3.1.10",
+    "ws": "^8.18.3"
+  }
+}
