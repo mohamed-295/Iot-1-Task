@@ -12,6 +12,9 @@ const char* password = "";
 
 const int ledPin = D1; 
 
+int currentBrightness = 0; // current LED PWM
+int targetBrightness = 0;  // target PWM from server
+
 void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
 
 	switch(type) {
@@ -26,7 +29,24 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
 		}
 			break;
 		case WStype_TEXT:
-			USE_SERIAL.printf("[WSc] get text: %s\n", payload);
+		 {
+				USE_SERIAL.printf("[WSc] get text: %s\n", payload);
+
+        String msg = String((char*)data);
+
+        msg.replace("[", "");
+        msg.replace("]", "");
+        msg.replace("'", "");
+        msg.replace(",", "");
+        msg.trim();
+
+        int brightness = msg.toInt();
+        brightness = constrain(brightness, 0, 255);
+        targetBrightness = map(brightness, 0, 255, 0, 1023);
+
+        Serial.printf("Target brightness set to: %d\n", targetBrightness);
+      }
+			
 
 			// send message to server
 			// webSocket.sendTXT("message here");
@@ -48,7 +68,7 @@ void setup() {
     delay(500);
     Serial.print(".");
   }
-
+	Serial.println(WiFi.SSID());
 	Serial.println("\nConnected! IP: " + WiFi.localIP().toString());
 
 	// server address, port and URL
@@ -58,9 +78,14 @@ void setup() {
 	wsc.onEvent(webSocketEvent);
 
 	// try ever 5000 again if connection has failed
-	wsc.setReconnectInterval(5000);
+	wsc.setReconnectInterval(3000);
 }
 
 void loop() {
+	if (currentBrightness < targetBrightness) currentBrightness++;
+  else if (currentBrightness > targetBrightness) currentBrightness--;
+
+  analogWrite(LED_PIN, currentBrightness);
+	
 	wsc.loop();
 }
