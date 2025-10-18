@@ -13,27 +13,45 @@ const char* password = "";
 const int ledPin = D1; 
 
 void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
+  switch(type) {
+    case WStype_DISCONNECTED:
+      Serial.println("[WSc] Disconnected!");
+      break;
 
-	switch(type) {
-		case WStype_DISCONNECTED:
-			USE_SERIAL.printf("[WSc] Disconnected!\n");
-			break;
-		case WStype_CONNECTED: {
-			USE_SERIAL.printf("[WSc] Connected to url: %s\n", payload);
+    case WStype_CONNECTED:
+      Serial.printf("[WSc] Connected to server: %s\n", payload);
+      wsc.sendTXT("NodeMCU connected successfully!");
+      break;
 
-			// send message to server when Connected
-			wsc.sendTXT("Connected ,hi im nodeMCU");
-		}
-			break;
-		case WStype_TEXT:
-			USE_SERIAL.printf("[WSc] get text: %s\n", payload);
+    case WStype_TEXT: {
+      String msg = String((char*)payload);
+      msg.trim();
+      Serial.printf("Received message: %s\n", msg.c_str());
 
-			// send message to server
-			// webSocket.sendTXT("message here");
-			break;
+      if (msg == "ON") {
+        analogWrite(ledPin, 255);
+      } 
+      else if (msg == "OFF") {
+        analogWrite(ledPin, 0);
+      } 
+      else if (msg == "TOGGLE") {
+        static bool ledState = false;
+        ledState = !ledState;
+        analogWrite(ledPin, ledState ? 255 : 0);
+      } 
+      else {
+        // If message is a number (brightness 0–255)
+        int brightness = msg.toInt();
+        if (brightness >= 0 && brightness <= 255) {
+          analogWrite(ledPin, brightness);
+          Serial.printf("Brightness set to %d\n", brightness);
+        }
+      }
+      break;
     }
-
+  }
 }
+
 
 void setup() {
 	// USE_SERIAL.begin(921600);

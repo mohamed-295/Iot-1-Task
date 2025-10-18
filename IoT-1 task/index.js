@@ -10,8 +10,7 @@ let server =app.listen(PORT,()=>{
 })
 
 app.get("/",(req,res)=>{
-    console.log("hi im get");
-    res.sendFile(__dirname+"/public/index.html")  
+    console.log("hi im get");  
 })
 
 let wss= new WebSocket.Server({server});
