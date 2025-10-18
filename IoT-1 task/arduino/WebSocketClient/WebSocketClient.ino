@@ -6,14 +6,17 @@ WebSocketsClient wsc;
 const char* ssid = "";
 const char* password = "";
 
-#define SERVER  "192.168.1.8"
+#define SERVER  "192.168.1.7"
 #define PORT		3000
 #define URL			"/"
 
 const int ledPin = D1; 
 
-int currentBrightness = 0; // current LED PWM
-int targetBrightness = 0;  // target PWM from server
+int currentMode = 0 ; 
+unsigned long lastTime = 0;
+const unsigned long toggleInterval = 500; 
+int brightness = 0;
+bool ledState = false;
 
 void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
   switch(type) {
@@ -26,51 +29,31 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
       wsc.sendTXT("NodeMCU connected successfully!");
       break;
 
-<<<<<<< HEAD
+
     case WStype_TEXT: {
       String msg = String((char*)payload);
       msg.trim();
-      Serial.printf("Received message: %s\n", msg.c_str());
-=======
+      //Serial.printf("Received message: %s\n", msg.c_str());
+
 			// send message to server when Connected
-			wsc.sendTXT("Connected ,hi im nodeMCU");
-		}
-			break;
-		case WStype_TEXT:
-		 {
-				USE_SERIAL.printf("[WSc] get text: %s\n", payload);
-
-        String msg = String((char*)data);
-
-        msg.replace("[", "");
-        msg.replace("]", "");
-        msg.replace("'", "");
-        msg.replace(",", "");
-        msg.trim();
-
-        int brightness = msg.toInt();
-        brightness = constrain(brightness, 0, 255);
-        targetBrightness = map(brightness, 0, 255, 0, 1023);
-
-        Serial.printf("Target brightness set to: %d\n", targetBrightness);
-      }
-			
->>>>>>> 4c2bf03f12306900137c6f54cb4a85a25a0e80c8
-
+		
       if (msg == "ON") {
-        analogWrite(ledPin, 255);
+        analogWrite(ledPin, brightness);
+        currentMode = 1;
       } 
       else if (msg == "OFF") {
         analogWrite(ledPin, 0);
+        currentMode = 0;
       } 
       else if (msg == "TOGGLE") {
-        static bool ledState = false;
+        currentMode = 2;
+        ledState = false;
         ledState = !ledState;
-        analogWrite(ledPin, ledState ? 255 : 0);
+        lastTime = millis();
       } 
       else {
         // If message is a number (brightness 0–255)
-        int brightness = msg.toInt();
+        brightness = msg.toInt();
         if (brightness >= 0 && brightness <= 255) {
           analogWrite(ledPin, brightness);
           Serial.printf("Brightness set to %d\n", brightness);
@@ -84,7 +67,7 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
 
 void setup() {
 	// USE_SERIAL.begin(921600);
-	USE_SERIAL.begin(115200);
+	Serial.begin(115200);
 	pinMode(ledPin, OUTPUT); 
 
  // --- Connect to Wi-Fi ---
@@ -109,10 +92,14 @@ void setup() {
 }
 
 void loop() {
-	if (currentBrightness < targetBrightness) currentBrightness++;
-  else if (currentBrightness > targetBrightness) currentBrightness--;
 
-  analogWrite(LED_PIN, currentBrightness);
-	
+	if(currentMode == 2) {
+    unsigned long currentTime = millis();
+    if (currentTime - lastTime >= toggleInterval) {
+      ledState = !ledState;
+      analogWrite(ledPin, ledState ? brightness : 0);
+      lastTime = currentTime;
+    }
+  }
 	wsc.loop();
 }

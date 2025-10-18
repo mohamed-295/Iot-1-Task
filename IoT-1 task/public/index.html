@@ -30,7 +30,12 @@
        let ws=new WebSocket(HOST);
 
         ws.onopen = () => document.getElementById("status").innerText = "Welcome ,You Are Connected ✅";
-        ws.onmessage = e => document.getElementById("status").innerText = e.data;
+        // ws.onmessage = e => {
+        //     // Only update status for state messages (ON, OFF, TOGGLE), not numeric values
+        //     if (isNaN(e.data)) {
+        //         document.getElementById("status").innerText = e.data;
+        //     }
+        // };
         ws.onclose = () => document.getElementById("status").innerText = "Disconnected ❌";
 
         function send(msg) {
@@ -46,7 +51,7 @@
         rangeOutput.textContent = rangeInput.value;
 
         rangeInput.addEventListener('input', function() {
-            ws.send(this.value);
+            ws.send(this.value);  
             this.style.filter=`drop-shadow(0 0 ${this.value / 40}px green)`
             rangeOutput.textContent = this.value;
             lamp.style.color = `rgb(${0},${this.value},${0})`;
