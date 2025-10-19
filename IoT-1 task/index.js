@@ -44,6 +44,12 @@ wss.on("connection",(ws, req)=>{
             if (data.type === 'log') {
                 // Broadcast log to all clients except NodeMCU
                 broadcastLog(data, ws);
+            } else if (data.type === 'range-update') {
+                // Broadcast range updates to all clients except NodeMCU and sender
+                broadcastRangeUpdate(data, ws);
+            } else if (data.type === 'state-change') {
+                // Broadcast state changes (ON/OFF/TOGGLE) to all clients except NodeMCU and sender
+                broadcastStateChange(data, ws);
             } else {
                 // Regular command message (ON/OFF/TOGGLE/brightness)
                 broadcast(messageStr);
@@ -77,6 +83,28 @@ function broadcastLog(logData, senderWs){
             // Don't send logs to NodeMCU (check by IP) and don't send back to sender
             if (client.clientIp !== mcuIp && client !== senderWs) {
                 client.send(JSON.stringify(logData));
+            }
+        }
+    })
+}
+
+function broadcastRangeUpdate(rangeData, senderWs){
+    wss.clients.forEach((client)=>{
+        if (client.readyState===WebSocket.OPEN) {
+            // Don't send to NodeMCU and don't send back to sender
+            if (client.clientIp !== mcuIp && client !== senderWs) {
+                client.send(JSON.stringify(rangeData));
+            }
+        }
+    })
+}
+
+function broadcastStateChange(stateData, senderWs){
+    wss.clients.forEach((client)=>{
+        if (client.readyState===WebSocket.OPEN) {
+            // Don't send to NodeMCU and don't send back to sender
+            if (client.clientIp !== mcuIp && client !== senderWs) {
+                client.send(JSON.stringify(stateData));
             }
         }
     })
