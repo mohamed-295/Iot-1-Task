@@ -6,7 +6,7 @@ WebSocketsClient wsc;
 const char* ssid = "";
 const char* password = "";
 
-#define SERVER  "192.168.1.8"
+#define SERVER  "192.168.1.5"
 #define PORT		3000
 #define URL			"/"
 
