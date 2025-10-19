@@ -59,6 +59,9 @@
                 const data = JSON.parse(e.data);
                 if (data.type === 'client-info' && data.ip) {
                     setDeviceName(data.ip);
+                } else if (data.type === 'log') {
+                    // Received a log from another client
+                    addLogToUI(data.timestamp, data.device, data.action);
                 }
             } catch (err) {
                 // Not JSON, ignore (it's a regular message like ON/OFF/TOGGLE)
@@ -77,6 +80,9 @@
                     const data = JSON.parse(e.data);
                     if (data.type === 'client-info' && data.ip) {
                         setDeviceName(data.ip);
+                    } else if (data.type === 'log') {
+                        // Received a log from another client
+                        addLogToUI(data.timestamp, data.device, data.action);
                     }
                 } catch (err) {
                     // Not JSON, ignore
@@ -106,24 +112,51 @@
 
         });
         
+        // Function to add log to UI
+        function addLogToUI(timestamp, device, action) {
+            logsContainer.style.display="block"
+            let logMessage=document.createElement("div");
+            logMessage.className="message"
+            logMessage.innerHTML=`@\n                                    <span class="date">${timestamp}</span> :\n                                    <strong>${escapeHtml(device)}</strong> changed LED to ${action}`
+            logsContainer.prepend(logMessage);
+        }
+
+        // Function to broadcast log to all clients (doesn't add to local UI)
+        function broadcastLog(action) {
+            const logData = {
+                type: 'log',
+                timestamp: new Date().toLocaleTimeString(),
+                device: deviceName,
+                action: action
+            };
+            if (ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify(logData));
+            }
+        }
+
         let allBtns=document.querySelectorAll(".btn");
         let logsContainer=document.querySelector(".log-items")
         allBtns.forEach(btn=>{
             btn.addEventListener("click",(e)=>{
-                logsContainer.style.display="block"
-                let logMessage=document.createElement("div");
-                logMessage.className="message"
-                logMessage.innerHTML=`@\n                                    <span class="date">${new Date().toLocaleTimeString()}</span> :\n                                    <strong>${escapeHtml(deviceName)}</strong> changed LED to ${e.target.innerHTML}`
-                logsContainer.prepend(logMessage);                    
+                const action = e.target.innerHTML;
+                const timestamp = new Date().toLocaleTimeString();
+                
+                // Add to local UI only
+                addLogToUI(timestamp, deviceName, action);
+                
+                // Broadcast to other clients (they will add it to their UI)
+                broadcastLog(action);
             })
         })
         rangeInput.addEventListener('change', function(e) {
-                logsContainer.style.display="block"
-
-            let logMessage=document.createElement("div");
-            logMessage.className="message"
-                logMessage.innerHTML=`@\n                                    <span class="date">${new Date().toLocaleTimeString()}</span> :\n                                    <strong>${escapeHtml(deviceName)}</strong> changed LED to ${e.target.value}`
-                logsContainer.prepend(logMessage);
+            const action = e.target.value;
+            const timestamp = new Date().toLocaleTimeString();
+            
+            // Add to local UI only
+            addLogToUI(timestamp, deviceName, action);
+            
+            // Broadcast to other clients (they will add it to their UI)
+            broadcastLog(action);
         })
 
         // avoid inserting raw HTML from device name
