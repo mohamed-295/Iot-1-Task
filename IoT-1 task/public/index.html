@@ -14,6 +14,9 @@
         
         <h1 class="py-3 ">LED Control via WebSocket <i class="fa-solid fa-wifi"></i></h1>
         <p id="status">Status: Not connected</p>
+        <div class="mb-2">Device: <strong id="deviceName">Resolving IP...</strong>
+            <button id="refreshIp" class="btn btn-sm btn-outline-secondary ms-2">Refresh IP</button>
+        </div>
         <div class="btn-container">
        <button class="btn btn-success me-5" onclick="send('ON')">ON</button>
        <button class="btn btn-danger me-5" onclick="send('OFF')">OFF</button>
@@ -46,6 +49,37 @@
         const rangeOutput = document.getElementById('rangeValue');
         const lamp = document.querySelector('.fire');
 
+        // derive device name from public IP 
+        let deviceName = 'Unknown Device';
+        const deviceNameEl = document.getElementById('deviceName');
+        const refreshBtn = document.getElementById('refreshIp');
+
+        function setDeviceName(name) {
+            deviceName = name || 'Unknown Device';
+            deviceNameEl.textContent = deviceName;
+        }
+
+        async function resolveIp() {
+            try {
+                const res = await fetch('https://api.ipify.org?format=json');
+                if (!res.ok) throw new Error('ip fetch failed');
+                const data = await res.json();
+                setDeviceName(data.ip);
+            } catch (err) {
+                // fallback to a readable portion of userAgent
+                const fallback = (navigator.userAgent && navigator.userAgent.split(')')[0]) || 'Unknown Device';
+                setDeviceName(fallback);
+            }
+        }
+
+        refreshBtn.addEventListener('click', () => {
+            deviceNameEl.textContent = 'Resolving IP...';
+            resolveIp();
+        });
+
+        // start resolution
+        resolveIp();
+
         // Set initial value
         rangeOutput.textContent = rangeInput.value;
 
@@ -65,9 +99,7 @@
                 logsContainer.style.display="block"
                 let logMessage=document.createElement("div");
                 logMessage.className="message"
-                logMessage.innerHTML=`@
-                                    <span class="date">${new Date().toLocaleTimeString()}</span> :
-                                    user change LED to ${e.target.innerHTML} `
+                logMessage.innerHTML=`@\n                                    <span class="date">${new Date().toLocaleTimeString()}</span> :\n                                    <strong>${escapeHtml(deviceName)}</strong> changed LED to ${e.target.innerHTML}`
                 logsContainer.prepend(logMessage);                    
             })
         })
@@ -76,11 +108,20 @@
 
             let logMessage=document.createElement("div");
             logMessage.className="message"
-                logMessage.innerHTML=`@
-                                    <span class="date">${new Date().toLocaleTimeString()}</span> :
-                                    user change LED to ${e.target.value} `
+                logMessage.innerHTML=`@\n                                    <span class="date">${new Date().toLocaleTimeString()}</span> :\n                                    <strong>${escapeHtml(deviceName)}</strong> changed LED to ${e.target.value}`
                 logsContainer.prepend(logMessage);
         })
+
+        // avoid inserting raw HTML from device name
+        function escapeHtml(unsafe) {
+            if (!unsafe) return '';
+            return String(unsafe)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/\"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
 
     </script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
