@@ -12,17 +12,21 @@
 <body>
     <div class="container">
         
-        <h1 class="py-3">LED Control via WebSocket <i class="fa-solid fa-wifi"></i></h1>
+        <h1 class="py-3 ">LED Control via WebSocket <i class="fa-solid fa-wifi"></i></h1>
         <p id="status">Status: Not connected</p>
+        <div class="btn-container">
        <button class="btn btn-success me-5" onclick="send('ON')">ON</button>
        <button class="btn btn-danger me-5" onclick="send('OFF')">OFF</button>
        <button class="btn btn-warning" onclick="send('TOGGLE')">TOGGLE</button>
+       </div>
        <br>
        <label class="mt-3 fs-3 form-label" for="range4" >RANGE</label>
         <input class="col-12 col-md-6 d-block mx-auto my-3" type="range" class="form-range" min="0" max="255" value="0" id="range">
         <div class="fs-2 text-success "><span >Value:</span> <output for="range4" id="rangeValue" aria-hidden="true"></output></div>
         <i class="fire fa-solid fa-lightbulb"></i>
-        
+    
+        <div class="log-items">
+        </div>
     </div>
 
     <script>
@@ -30,12 +34,7 @@
        let ws=new WebSocket(HOST);
 
         ws.onopen = () => document.getElementById("status").innerText = "Welcome ,You Are Connected ✅";
-        // ws.onmessage = e => {
-        //     // Only update status for state messages (ON, OFF, TOGGLE), not numeric values
-        //     if (isNaN(e.data)) {
-        //         document.getElementById("status").innerText = e.data;
-        //     }
-        // };
+        // ws.onmessage = e => document.getElementById("status").innerText = e.data;
         ws.onclose = () => document.getElementById("status").innerText = "Disconnected ❌";
 
         function send(msg) {
@@ -51,7 +50,7 @@
         rangeOutput.textContent = rangeInput.value;
 
         rangeInput.addEventListener('input', function() {
-            ws.send(this.value);  
+            ws.send(this.value);
             this.style.filter=`drop-shadow(0 0 ${this.value / 40}px green)`
             rangeOutput.textContent = this.value;
             lamp.style.color = `rgb(${0},${this.value},${0})`;
@@ -59,6 +58,30 @@
 
         });
         
+        let allBtns=document.querySelectorAll(".btn");
+        let logsContainer=document.querySelector(".log-items")
+        allBtns.forEach(btn=>{
+            btn.addEventListener("click",(e)=>{
+                logsContainer.style.display="block"
+                let logMessage=document.createElement("div");
+                logMessage.className="message"
+                logMessage.innerHTML=`@
+                                    <span class="date">${new Date().toLocaleTimeString()}</span> :
+                                    user change LED to ${e.target.innerHTML} `
+                logsContainer.prepend(logMessage);                    
+            })
+        })
+        rangeInput.addEventListener('change', function(e) {
+                logsContainer.style.display="block"
+
+            let logMessage=document.createElement("div");
+            logMessage.className="message"
+                logMessage.innerHTML=`@
+                                    <span class="date">${new Date().toLocaleTimeString()}</span> :
+                                    user change LED to ${e.target.value} `
+                logsContainer.prepend(logMessage);
+        })
+
     </script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 </body>

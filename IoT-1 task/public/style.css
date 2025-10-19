@@ -29,12 +29,19 @@ body::selection {
   color: white;
 }
 body .container {
-    padding-top: 105px;
+    padding-top: 20px;
 }
 body .container h1 {
     font-size: 40px;
 }
-
+@media (max-width:768px) {
+  body .container h1 {
+    font-size: 23px;
+  }
+}
+.btn-container{
+  margin-top: 60px;
+}
 #range {
   -webkit-appearance: none;  
   appearance: none;
@@ -66,4 +73,21 @@ body .container h1 {
     margin: 20px 0;
     color: black;
     padding: 20px 0;
+}
+
+.log-items {
+  display: none;
+  max-width: 400px;
+  max-height: 110px;
+  overflow: hidden;
+  margin: 0 auto;
+  text-align: left;
+  border: 1px solid #0be960;
+  box-shadow: 0 0 15px #0be960;
+  padding:10px 20px 10px 10px;
+  border-radius: 10px;
+}
+.message {
+  color: #0be960;
+  
 }
