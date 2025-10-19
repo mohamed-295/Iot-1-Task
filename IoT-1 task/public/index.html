@@ -36,9 +36,54 @@
        let HOST=location.origin.replace(/^http/,"ws");
        let ws=new WebSocket(HOST);
 
-        ws.onopen = () => document.getElementById("status").innerText = "Welcome ,You Are Connected ✅";
-        // ws.onmessage = e => document.getElementById("status").innerText = e.data;
+        // derive device name from WebSocket server
+        let deviceName = 'Unknown Device';
+        const deviceNameEl = document.getElementById('deviceName');
+        const refreshBtn = document.getElementById('refreshIp');
+
+        function setDeviceName(name) {
+            // Remove IPv6 prefix if present (::ffff:)
+            if (name && name.includes('::ffff:')) {
+                name = name.replace('::ffff:', '');
+            }
+            deviceName = name || 'Unknown Device';
+            deviceNameEl.textContent = deviceName;
+        }
+
+        ws.onopen = () => {
+            document.getElementById("status").innerText = "Welcome ,You Are Connected ✅";
+        };
+
+        ws.onmessage = e => {
+            try {
+                const data = JSON.parse(e.data);
+                if (data.type === 'client-info' && data.ip) {
+                    setDeviceName(data.ip);
+                }
+            } catch (err) {
+                // Not JSON, ignore (it's a regular message like ON/OFF/TOGGLE)
+            }
+        };
+
         ws.onclose = () => document.getElementById("status").innerText = "Disconnected ❌";
+
+        refreshBtn.addEventListener('click', () => {
+            deviceNameEl.textContent = 'Reconnecting...';
+            ws.close();
+            ws = new WebSocket(HOST);
+            ws.onopen = () => document.getElementById("status").innerText = "Welcome ,You Are Connected ✅";
+            ws.onmessage = e => {
+                try {
+                    const data = JSON.parse(e.data);
+                    if (data.type === 'client-info' && data.ip) {
+                        setDeviceName(data.ip);
+                    }
+                } catch (err) {
+                    // Not JSON, ignore
+                }
+            };
+            ws.onclose = () => document.getElementById("status").innerText = "Disconnected ❌";
+        });
 
         function send(msg) {
             if (ws.readyState === WebSocket.OPEN) ws.send(msg);
@@ -48,37 +93,6 @@
         const rangeInput = document.getElementById('range');
         const rangeOutput = document.getElementById('rangeValue');
         const lamp = document.querySelector('.fire');
-
-        // derive device name from public IP 
-        let deviceName = 'Unknown Device';
-        const deviceNameEl = document.getElementById('deviceName');
-        const refreshBtn = document.getElementById('refreshIp');
-
-        function setDeviceName(name) {
-            deviceName = name || 'Unknown Device';
-            deviceNameEl.textContent = deviceName;
-        }
-
-        async function resolveIp() {
-            try {
-                const res = await fetch('https://api.ipify.org?format=json');
-                if (!res.ok) throw new Error('ip fetch failed');
-                const data = await res.json();
-                setDeviceName(data.ip);
-            } catch (err) {
-                // fallback to a readable portion of userAgent
-                const fallback = (navigator.userAgent && navigator.userAgent.split(')')[0]) || 'Unknown Device';
-                setDeviceName(fallback);
-            }
-        }
-
-        refreshBtn.addEventListener('click', () => {
-            deviceNameEl.textContent = 'Resolving IP...';
-            resolveIp();
-        });
-
-        // start resolution
-        resolveIp();
 
         // Set initial value
         rangeOutput.textContent = rangeInput.value;

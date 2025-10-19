@@ -15,8 +15,14 @@ app.get("/",(req,res)=>{
 
 let wss= new WebSocket.Server({server});
 
-wss.on("connection",ws=>{
+wss.on("connection",(ws, req)=>{
+    const ip = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.socket.remoteAddress;
+    const ua = req.headers['user-agent'];
+    console.log(`WS client: ${ip} | ${ua}`);
     console.log("client connected to server");
+
+    // Send the client's IP address to them
+    ws.send(JSON.stringify({ type: 'client-info', ip: ip }));
 
     ws.on("message",(message)=>{
         
