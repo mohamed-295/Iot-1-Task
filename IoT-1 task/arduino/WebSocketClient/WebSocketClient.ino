@@ -3,10 +3,10 @@
 
 WebSocketsClient wsc;
 
-const char* ssid = "";
-const char* password = "";
+const char* ssid = "A71.7271";
+const char* password = "MK23234521";
 
-#define SERVER  "192.168.1.7"
+#define SERVER  "10.197.30.170"
 #define PORT		3000
 #define URL			"/"
 
@@ -43,6 +43,7 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
       } 
       else if (msg == "OFF") {
         analogWrite(ledPin, 0);
+        brightness = 0;
         currentMode = 0;
       } 
       else if (msg == "TOGGLE") {

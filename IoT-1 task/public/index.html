@@ -50,11 +50,17 @@
             deviceNameEl.textContent = deviceName;
         }
 
-        ws.onopen = () => {
-            document.getElementById("status").innerText = "Welcome ,You Are Connected ✅";
-        };
+        // Get DOM elements early (before WebSocket handlers)
+        const rangeInput = document.getElementById('range');
+        const rangeOutput = document.getElementById('rangeValue');
+        const lamp = document.querySelector('.fire');
 
-        ws.onmessage = e => {
+        // Reusable WebSocket event handlers
+        function handleOpen() {
+            document.getElementById("status").innerText = "Welcome ,You Are Connected ✅";
+        }
+
+        function handleMessage(e) {
             try {
                 const data = JSON.parse(e.data);
                 if (data.type === 'client-info' && data.ip) {
@@ -85,58 +91,33 @@
             } catch (err) {
                 // Not JSON, ignore (it's a regular message like ON/OFF/TOGGLE)
             }
-        };
+        }
 
-        ws.onclose = () => document.getElementById("status").innerText = "Disconnected ❌";
+        function handleClose() {
+            document.getElementById("status").innerText = "Disconnected ❌";
+        }
 
+        // Setup WebSocket handlers
+        function setupWebSocket(socket) {
+            socket.onopen = handleOpen;
+            socket.onmessage = handleMessage;
+            socket.onclose = handleClose;
+        }
+
+        // Initialize WebSocket with handlers
+        setupWebSocket(ws);
+
+        // Refresh button handler
         refreshBtn.addEventListener('click', () => {
             deviceNameEl.textContent = 'Reconnecting...';
             ws.close();
             ws = new WebSocket(HOST);
-            ws.onopen = () => document.getElementById("status").innerText = "Welcome ,You Are Connected ✅";
-            ws.onmessage = e => {
-                try {
-                    const data = JSON.parse(e.data);
-                    if (data.type === 'client-info' && data.ip) {
-                        setDeviceName(data.ip);
-                    } else if (data.type === 'log') {
-                        // Received a log from another client
-                        addLogToUI(data.timestamp, data.device, data.action);
-                    } else if (data.type === 'range-update') {
-                        // Update range slider from another client
-                        rangeInput.value = data.value;
-                        rangeOutput.textContent = data.value;
-                        rangeInput.style.filter=`drop-shadow(0 0 ${data.value / 40}px green)`;
-                        lamp.style.color = `rgb(${0},${data.value},${0})`;
-                        lamp.style.filter=`drop-shadow(0 0 ${data.value / 20}px white)`;
-                    } else if (data.type === 'state-change') {
-                        // Update UI based on state change from another client
-                        if (data.state === 'OFF') {
-                            rangeInput.value = 0;
-                            rangeOutput.textContent = 0;
-                            rangeInput.disabled = true;
-                            rangeInput.style.filter = 'none';
-                            lamp.style.color = `rgb(0,0,0)`;
-                            lamp.style.filter = 'none';
-                        } else {
-                            rangeInput.disabled = false;
-                        }
-                    }
-                } catch (err) {
-                    // Not JSON, ignore
-                }
-            };
-            ws.onclose = () => document.getElementById("status").innerText = "Disconnected ❌";
+            setupWebSocket(ws);
         });
 
         function send(msg) {
             if (ws.readyState === WebSocket.OPEN) ws.send(msg);
         }
-
-        // This is an example script, please modify as needed
-        const rangeInput = document.getElementById('range');
-        const rangeOutput = document.getElementById('rangeValue');
-        const lamp = document.querySelector('.fire');
 
         // Set initial value
         rangeOutput.textContent = rangeInput.value;
